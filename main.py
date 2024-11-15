@@ -13,7 +13,7 @@ def load_reminders():
 def save_reminders(reminders):
     with open("./reminders.json", 'w') as output_file:
         data = [{"text": text, "date": date.isoformat()} for text, date in reminders]
-        json.dumps(reminders, output_file)
+        json.dump(data, output_file)
 
 def main(page: ft.Page):
     page.title = "Reminder App"
@@ -27,7 +27,7 @@ def main(page: ft.Page):
         if reminder_text.value and selected_date:
             if selected_date > datetime.now():
                 reminders.append((reminder_text.value, selected_date))
-                reminders_list.controls.append(ft.Text(f"Reminder {reminder_text.value} at {selected_date.strftime('%Y-%m-%d %H:%M')}"))
+                reminders_list.controls.append(ft.Text(f"Reminder: {reminder_text.value} at {selected_date.strftime('%Y-%m-%d %H:%M')}"))
                 save_reminders(reminders)
                 reminder_text.value = ""
                 reminders_list.update()
