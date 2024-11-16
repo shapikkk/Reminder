@@ -9,6 +9,11 @@ def ui_build(page, reminders, save_reminders):
     reminders_list = ft.Column()
     selected_date_text = ft.Text("No date selected", size=16)
 
+    def errMessage(message):
+        errorMessage = ft.SnackBar(ft.Text(message))
+        page.overlay.append(errorMessage)
+        errorMessage.open = True
+
     def add_reminder(e):
         if reminder_text.value and selected_date:
             if selected_date > datetime.now():
@@ -18,13 +23,9 @@ def ui_build(page, reminders, save_reminders):
                 reminder_text.value = ""
                 reminders_list.update()
             else:
-                errorMessage = ft.SnackBar(ft.Text("Date must be in the future"))
-                page.overlay.append(errorMessage)
-                errorMessage.open = True
+                errMessage("Date must be in the future")
         else:
-            errorMessage = ft.SnackBar(ft.Text("Fill all fields"))
-            page.overlay.append(errorMessage)
-            errorMessage.open = True
+            errMessage("Fill all fields")
 
     add_button = ft.ElevatedButton("Add Reminder", on_click=add_reminder)
 
