@@ -1,6 +1,9 @@
 import flet as ft
 from datetime import datetime
 
+from flet_core import MainAxisAlignment
+
+
 def ui_build(page, reminders, save_reminders):
     selected_date = None
 
@@ -17,7 +20,8 @@ def ui_build(page, reminders, save_reminders):
     def add_reminder(e):
         if reminder_text.value and selected_date:
             if selected_date > datetime.now():
-                reminders.append((reminder_text.value, selected_date))
+                status = "active"
+                reminders.append((reminder_text.value, selected_date, status))
                 reminders_list.controls.append(ft.Text(f"Reminder: {reminder_text.value} at {selected_date.strftime('%Y-%m-%d %H:%M')}"))
                 save_reminders(reminders)
                 reminder_text.value = ""
@@ -36,10 +40,22 @@ def ui_build(page, reminders, save_reminders):
         selected_date_text.value = f"Selected date: {selected_date.strftime('%Y-%m-%d %H:%M')}"
         selected_date_text.update()
 
-    for text, date in reminders:
-        reminders_list.controls.append(
-            ft.Text(f"Reminder: {text} at {date.strftime('%Y-%m-%d %H:%M')}")
-        )
+    active_reminders = []
+    past_reminders = []
+
+    for text, date, status in reminders:
+        if status == "active":
+            active_reminders.append((text, date))
+        else:
+            past_reminders.append((text, date))
+
+    reminders_list.controls.append(ft.Text("Active:", size=15, weight=ft.FontWeight.BOLD))
+    for text, date in active_reminders:
+        reminders_list.controls.append(ft.Text(f"{text} at {date.strftime('%Y-%m-%d %H:%M')}"))
+
+    reminders_list.controls.append(ft.Text("Past:", size=15, weight=ft.FontWeight.BOLD))
+    for text, date in past_reminders:
+        reminders_list.controls.append(ft.Text(f"{text} at {date.strftime('%Y-%m-%d %H:%M')}"))
 
     cupertino_date_picker = ft.CupertinoDatePicker(
         #date_picker_mode=ft.CupertinoDatePickerMode.DATE,
@@ -65,7 +81,7 @@ def ui_build(page, reminders, save_reminders):
             open_dataPickerButton,
             add_button,
             ft.Divider(),
-            ft.Text("Your reminders:", size=20),
+            ft.Text("Your reminders:", size=20, weight=ft.FontWeight.BOLD),
             reminders_list
         ],
         alignment=ft.MainAxisAlignment.START,
