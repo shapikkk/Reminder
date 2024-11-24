@@ -7,8 +7,10 @@ def main(page: ft.Page):
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
 
     reminders = load_reminders()
-    ui = ui_build(page, reminders, save_reminders)
 
-    page.add(ui)
+    page.theme_mode = ft.ThemeMode.DARK
+    task_manager = TaskManager()
+    date_grid = DateGrid(Settings.get_year(), Settings.get_month(), task_manager)
+    page.add(ft.Column(controls=[date_grid, ft.Divider(), task_manager]))
 
 ft.app(target=main)

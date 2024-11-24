@@ -1,89 +1,152 @@
 import flet as ft
+import calendar
 from datetime import datetime
 
-from flet_core import MainAxisAlignment
+cal = calendar.Calendar()
 
+# Словари для дней и месяцев
+date_class = {0: "Mo", 1: "Tu", 2: "We", 3: "Th", 4: "Fr", 5: "Sa", 6: "Su"}
+month_class = {
+    1: "January", 2: "February", 3: "March", 4: "April", 5: "May", 6: "June",
+    7: "July", 8: "August", 9: "September", 10: "October", 11: "November", 12: "December"
+}
 
-def ui_build(page, reminders, save_reminders):
-    selected_date = None
+# Настройки календаря
+class Settings:
+    year = datetime.now().year
+    month = datetime.now().month
 
-    #UI tools
-    reminder_text = ft.TextField(label="Reminder text", width=300)
-    reminders_list = ft.Column()
-    selected_date_text = ft.Text("No date selected", size=16)
+    @staticmethod
+    def get_year():
+        return Settings.year
 
-    def errMessage(message):
-        errorMessage = ft.SnackBar(ft.Text(message))
-        page.overlay.append(errorMessage)
-        errorMessage.open = True
+    @staticmethod
+    def get_month():
+        return Settings.month
 
-    def add_reminder(e):
-        if reminder_text.value and selected_date:
-            if selected_date > datetime.now():
-                status = "active"
-                reminders.append((reminder_text.value, selected_date, status))
-                reminders_list.controls.append(ft.Text(f"Reminder: {reminder_text.value} at {selected_date.strftime('%Y-%m-%d %H:%M')}"))
-                save_reminders(reminders)
-                reminder_text.value = ""
-                reminders_list.update()
+    @staticmethod
+    def get_date(delta: int):
+        if delta == 1:
+            if Settings.month + delta > 12:
+                Settings.month = 1
+                Settings.year += 1
             else:
-                errMessage("Date must be in the future")
-        else:
-            errMessage("Fill all fields")
+                Settings.month += 1
+        if delta == -1:
+            if Settings.month + delta < 1:
+                Settings.month = 12
+                Settings.year -= 1
+            else:
+                Settings.month -= 1
 
-    add_button = ft.ElevatedButton("Add Reminder", on_click=add_reminder)
 
-    # Cupertino date picker. Online docs: https://flet.dev/docs/controls/cupertinodatepicker/
-    def handle_date_change(e: ft.ControlEvent):
-        nonlocal selected_date
-        selected_date = e.control.value
-        selected_date_text.value = f"Selected date: {selected_date.strftime('%Y-%m-%d %H:%M')}"
-        selected_date_text.update()
+# Контейнер для отображения дня
+class DateBox(ft.Container):
+    def __init__(self, day, date=None, date_instance=None, task_instance=None, opacity_=1.0):
+        super().__init__(
+            width=30,
+            height=30,
+            alignment=ft.alignment.center,
+            shape=ft.BoxShape.RECTANGLE,
+            border_radius=5,
+            opacity=opacity_,
+            data=date,
+            on_click=self.selected
+        )
+        self.day = day
+        self.date_instance = date_instance
+        self.task_instance = task_instance
+        self.content = ft.Text(self.day, text_align="center")
 
-    active_reminders = []
-    past_reminders = []
+    def selected(self, e: ft.TapEvent):
+        if self.date_instance:
+            for row in self.date_instance.controls[1:]:
+                for date in row.controls:
+                    date.bgcolor = "#20303e" if date == e.control else None
+                    date.border = (
+                        ft.border.all(0.5, "#4fadf9") if date == e.control else None
+                    )
+                    if date == e.control:
+                        self.task_instance.set_selected_date(e.control.data)
+            self.date_instance.update()
+            self.task_instance.update()
 
-    for text, date, status in reminders:
-        if status == "active":
-            active_reminders.append((text, date))
-        else:
-            past_reminders.append((text, date))
 
-    reminders_list.controls.append(ft.Text("Active:", size=15, weight=ft.FontWeight.BOLD))
-    for text, date in active_reminders:
-        reminders_list.controls.append(ft.Text(f"{text} at {date.strftime('%Y-%m-%d %H:%M')}"))
+# Календарь для выбора дат
+class DateGrid(ft.Column):
+    def __init__(self, year, month, task_instance):
+        super().__init__()
+        self.year = year
+        self.month = month
+        self.task_manager = task_instance
+        self.date = ft.Text(f"{month_class[self.month]} {self.year}")
+        self.controls.insert(
+            1,
+            ft.Container(
+                content=ft.Row(
+                    controls=[
+                        ft.IconButton("chevron_left", on_click=lambda e: self.update_date_grid(e, -1)),
+                        ft.Container(width=150, content=self.date, alignment=ft.alignment.center),
+                        ft.IconButton("chevron_right", on_click=lambda e: self.update_date_grid(e, 1)),
+                    ],
+                    alignment="center",
+                )
+            ),
+        )
+        self.populate_date_grid(self.year, self.month)
 
-    reminders_list.controls.append(ft.Text("Past:", size=15, weight=ft.FontWeight.BOLD))
-    for text, date in past_reminders:
-        reminders_list.controls.append(ft.Text(f"{text} at {date.strftime('%Y-%m-%d %H:%M')}"))
+    def populate_date_grid(self, year, month):
+        del self.controls[1:]
+        for week in cal.monthdayscalendar(year, month):
+            row = ft.Row(controls=[], alignment="spaceEvenly")
+            for day in week:
+                if day != 0:
+                    row.controls.append(
+                        DateBox(day, self.format_date(day), self, self.task_manager)
+                    )
+                else:
+                    row.controls.append(DateBox(" "))
+            self.controls.append(row)
 
-    cupertino_date_picker = ft.CupertinoDatePicker(
-        #date_picker_mode=ft.CupertinoDatePickerMode.DATE,
-        on_change=handle_date_change,
-    )
+    def update_date_grid(self, e, delta):
+        Settings.get_date(delta)
+        self.update_year_and_month(Settings.get_year(), Settings.get_month())
+        self.populate_date_grid(Settings.get_year(), Settings.get_month())
+        self.update()
 
-    open_dataPickerButton = ft.ElevatedButton(
-            "DatePicker",
-            on_click=lambda e: page.open(
-                ft.CupertinoBottomSheet(
-                    cupertino_date_picker,
-                    height=216,
-                    padding=ft.padding.only(top=6),
+    def update_year_and_month(self, year, month):
+        self.year = year
+        self.month = month
+        self.date.value = f"{month_class[self.month]} {self.year}"
+
+    def format_date(self, day):
+        return f"{month_class[self.month]} {day}, {self.year}"
+
+
+# Менеджер задач (напоминаний)
+class TaskManager(ft.Column):
+    def __init__(self):
+        super().__init__()
+        self.selected_date = None
+        self.date_text = ft.Text("No date selected", size=16)
+        self.reminder_text = ft.TextField(label="Reminder text", width=300)
+        self.reminders_list = ft.Column()
+        self.controls.append(self.date_text)
+        self.controls.append(self.reminder_text)
+        self.controls.append(self.reminders_list)
+        self.controls.append(
+            ft.ElevatedButton("Add Reminder", on_click=self.add_reminder)
+        )
+
+    def set_selected_date(self, date):
+        self.selected_date = date
+        self.date_text.value = f"Selected date: {self.selected_date}"
+        self.update()
+
+    def add_reminder(self, e):
+        if self.selected_date and self.reminder_text.value:
+            self.reminders_list.controls.append(
+                ft.Text(f"Reminder: {self.reminder_text.value} at {self.selected_date}")
             )
-        ),
-    )
-
-    return ft.Column(
-        [
-            ft.Text("Reminder App", size=20, weight=ft.FontWeight.BOLD),
-            reminder_text,
-            selected_date_text,
-            open_dataPickerButton,
-            add_button,
-            ft.Divider(),
-            ft.Text("Your reminders:", size=20, weight=ft.FontWeight.BOLD),
-            reminders_list
-        ],
-        alignment=ft.MainAxisAlignment.START,
-        horizontal_alignment=ft.CrossAxisAlignment.START,
-    )
+            self.reminder_text.value = ""
+            self.update()
