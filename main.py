@@ -1,3 +1,4 @@
+import os
 import flet as ft
 from storage import *
 from ui import *
@@ -13,4 +14,8 @@ def main(page: ft.Page):
     date_grid = DateGrid(Settings.get_year(), Settings.get_month(), task_manager)
     page.add(ft.Column(controls=[date_grid, ft.Divider(), task_manager]))
 
-ft.app(target=main)
+if __name__ == "__main__":
+    if os.getenv("CI") != "true":
+        ft.app(target=main)
+    else:
+        print("Running in CI/CD mode. GUI is disabled.")

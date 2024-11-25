@@ -1,17 +1,17 @@
 import flet as ft
 import calendar
+from storage import *
 from datetime import datetime
 
 cal = calendar.Calendar()
 
-# Словари для дней и месяцев
 date_class = {0: "Mo", 1: "Tu", 2: "We", 3: "Th", 4: "Fr", 5: "Sa", 6: "Su"}
 month_class = {
     1: "January", 2: "February", 3: "March", 4: "April", 5: "May", 6: "June",
     7: "July", 8: "August", 9: "September", 10: "October", 11: "November", 12: "December"
 }
 
-# Настройки календаря
+# Calendar settings
 class Settings:
     year = datetime.now().year
     month = datetime.now().month
@@ -39,8 +39,7 @@ class Settings:
             else:
                 Settings.month -= 1
 
-
-# Контейнер для отображения дня
+# Container to show the day
 class DateBox(ft.Container):
     def __init__(self, day, date=None, date_instance=None, task_instance=None, opacity_=1.0):
         super().__init__(
@@ -71,8 +70,6 @@ class DateBox(ft.Container):
             self.date_instance.update()
             self.task_instance.update()
 
-
-# Календарь для выбора дат
 class DateGrid(ft.Column):
     def __init__(self, year, month, task_instance):
         super().__init__()
@@ -122,8 +119,6 @@ class DateGrid(ft.Column):
     def format_date(self, day):
         return f"{month_class[self.month]} {day}, {self.year}"
 
-
-# Менеджер задач (напоминаний)
 class TaskManager(ft.Column):
     def __init__(self):
         super().__init__()
@@ -131,12 +126,14 @@ class TaskManager(ft.Column):
         self.date_text = ft.Text("No date selected", size=16)
         self.reminder_text = ft.TextField(label="Reminder text", width=300)
         self.reminders_list = ft.Column()
+        self.reminders = load_reminders()
         self.controls.append(self.date_text)
         self.controls.append(self.reminder_text)
         self.controls.append(self.reminders_list)
         self.controls.append(
             ft.ElevatedButton("Add Reminder", on_click=self.add_reminder)
         )
+        self.load_existing_reminders()
 
     def set_selected_date(self, date):
         self.selected_date = date
@@ -145,8 +142,22 @@ class TaskManager(ft.Column):
 
     def add_reminder(self, e):
         if self.selected_date and self.reminder_text.value:
+            try:
+                parsed_date = datetime.strptime(self.selected_date, "%B %d, %Y")
+                reminder = (self.reminder_text.value, parsed_date, "active")
+                self.reminders.append(reminder)
+                save_reminders(self.reminders)
+                self.reminders_list.controls.append(
+                    ft.Text(f"Reminder: {self.reminder_text.value} at {self.selected_date}")
+                )
+                self.reminder_text.value = ""
+                self.update()
+            except ValueError as ex:
+                print(f"Error parsing date: {ex}")
+
+    def load_existing_reminders(self):
+        for text, date, status in self.reminders:
+            reminder_status = f"({status})" if status else ""
             self.reminders_list.controls.append(
-                ft.Text(f"Reminder: {self.reminder_text.value} at {self.selected_date}")
+                ft.Text(f"Reminder: {text} at {date.isoformat()} {reminder_status}")
             )
-            self.reminder_text.value = ""
-            self.update()

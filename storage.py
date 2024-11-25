@@ -5,7 +5,7 @@ REMINDERS_FILE = "./reminders.json"
 
 def load_reminders():
     try:
-        with open("./reminders.json", 'r') as reminders:
+        with open(REMINDERS_FILE, 'r') as reminders:
             data = json.load(reminders)
             reminders_data = [(item["text"], datetime.fromisoformat(item["date"]), item["status"]) for item in data]
             reminder_updater(reminders_data)
@@ -14,7 +14,7 @@ def load_reminders():
         return []
 
 def save_reminders(reminders):
-    with open("./reminders.json", 'w') as output_file:
+    with open(REMINDERS_FILE, 'w') as output_file:
         data = [{"text": text, "date": date.isoformat(), "status": status} for text, date, status in reminders]
         json.dump(data, output_file, indent=4)
 
