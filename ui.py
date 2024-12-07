@@ -1,5 +1,6 @@
 import flet as ft
 import calendar
+from database import *
 from storage import *
 from datetime import datetime
 
@@ -120,6 +121,9 @@ class DateGrid(ft.Column):
         return f"{month_class[self.month]} {day}, {self.year}"
 
 class TaskManager(ft.Column):
+
+    newDB = Database()
+
     def __init__(self):
         super().__init__()
         self.selected_date = None
@@ -127,6 +131,7 @@ class TaskManager(ft.Column):
         self.reminder_text = ft.TextField(label="Reminder text", width=300)
         self.reminders_list = ft.Column()
         self.reminders = load_reminders()
+        self.remindersGetTasks = self.newDB.get_all_tasks()
         self.controls.append(self.date_text)
         self.controls.append(self.reminder_text)
         self.controls.append(self.reminders_list)
@@ -143,10 +148,8 @@ class TaskManager(ft.Column):
     def add_reminder(self, e):
         if self.selected_date and self.reminder_text.value:
             try:
-                parsed_date = datetime.strptime(self.selected_date, "%B %d, %Y")
-                reminder = (self.reminder_text.value, parsed_date, "active")
-                self.reminders.append(reminder)
-                save_reminders(self.reminders)
+                reminder = (self.reminder_text.value, self.selected_date, "0")
+                self.newDB.save_task(reminder)
                 self.reminders_list.controls.append(
                     ft.Text(f"Reminder: {self.reminder_text.value} at {self.selected_date}")
                 )
@@ -156,8 +159,8 @@ class TaskManager(ft.Column):
                 print(f"Error parsing date: {ex}")
 
     def load_existing_reminders(self):
-        for text, date, status in self.reminders:
+        for id, description, date, status in self.remindersGetTasks:
             reminder_status = f"({status})" if status else ""
             self.reminders_list.controls.append(
-                ft.Text(f"Reminder: {text} at {date.isoformat()} {reminder_status}")
+                ft.Text(f"Reminder: {description} at {date.isoformat()} {reminder_status}")
             )
