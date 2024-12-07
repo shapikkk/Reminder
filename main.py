@@ -7,7 +7,6 @@ def main(page: ft.Page):
     page.title = "Reminder App"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
 
-    reminders = load_reminders()
     task_manager = TaskManager()
 
     date_grid = DateGrid(Settings.get_year(), Settings.get_month(), task_manager)

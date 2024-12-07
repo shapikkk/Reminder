@@ -14,7 +14,7 @@ class Database:
             Database.cursor = Database.conn.cursor()
 
     def get_all_tasks(self):
-        Database.cursor.execute("SELECT * FROM reminderPy WHERE status = 0")
+        Database.cursor.execute("SELECT * FROM reminderPy WHERE status between 0 and 1")
         select_data = Database.cursor.fetchall()
 
         return select_data

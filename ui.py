@@ -1,5 +1,8 @@
 import flet as ft
 import calendar
+
+from PIL.Image import linear_gradient, radial_gradient
+
 from database import *
 from storage import *
 from datetime import datetime
@@ -133,16 +136,42 @@ class TaskManager(ft.Column):
         self.reminders = load_reminders()
         self.remindersGetTasks = self.newDB.get_all_tasks()
         self.controls.append(self.date_text)
-        self.controls.append(self.reminder_text)
-        self.controls.append(self.reminders_list)
+
         self.controls.append(
-            ft.ElevatedButton("Add Reminder", on_click=self.add_reminder)
+            ft.GridView(
+                controls=[
+                    ft.Column(
+                        controls=[
+                            self.reminder_text,
+                            self.reminders_list,
+                        ]
+                    ),
+                    ft.Column(
+                        controls=[
+                            ft.ElevatedButton("Add Reminder", on_click=self.add_reminder),
+                            ft.ElevatedButton("Delete Reminder", on_click=self.delete_reminder),
+                            ft.ElevatedButton("Update Reminder", on_click=self.update_reminder),
+                        ]
+                    )
+                ],
+                max_extent=300,
+                run_spacing=50
+            )
         )
+
         self.load_existing_reminders()
 
     def set_selected_date(self, date):
         self.selected_date = date
         self.date_text.value = f"Selected date: {self.selected_date}"
+        self.update()
+
+    def selected_reminder(self, e):
+        for control in self.reminders_list.controls:
+            control.bgcolor = None
+
+        e.control.bgcolor = "#0047ab"
+        self.selected_reminder = e.control
         self.update()
 
     def add_reminder(self, e):
@@ -158,9 +187,42 @@ class TaskManager(ft.Column):
             except ValueError as ex:
                 print(f"Error parsing date: {ex}")
 
+    def delete_reminder(self, e):
+        if self.selected_reminder:
+            try:
+                reminder_id = self.selected_reminder.data
+
+                self.newDB.delete_task(reminder_id)
+
+                self.reminders_list.controls.remove(self.selected_reminder)
+                self.selected_reminder = None
+                self.update()
+            except ValueError as ex:
+                print(f"Error deleting reminder: {ex}")
+        else:
+            print(f"No reminder selected")
+
+    def update_reminder(self, e):
+        pass
+
     def load_existing_reminders(self):
         for id, description, date, status in self.remindersGetTasks:
             reminder_status = f"({status})" if status else ""
-            self.reminders_list.controls.append(
-                ft.Text(f"Reminder: {description} at {date.isoformat()} {reminder_status}")
+
+            reminder_row = ft.Row(
+                controls=[
+                    ft.Text(f"Reminder: {description} at {date.isoformat()} {reminder_status}"),
+                ],
+                width=300
             )
+
+            reminder_container_event = ft.Container(
+                content=reminder_row,
+                on_click=self.selected_reminder,
+                data=id,
+                animate=ft.animation.Animation(500, ft.AnimationCurve.LINEAR),
+                border_radius=10,
+                padding=5
+            )
+
+            self.reminders_list.controls.append(reminder_container_event)
