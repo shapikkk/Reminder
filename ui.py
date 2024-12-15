@@ -1,8 +1,5 @@
 import flet as ft
 import calendar
-
-from PIL.Image import linear_gradient, radial_gradient
-
 from database import *
 from storage import *
 from datetime import datetime
@@ -133,7 +130,6 @@ class TaskManager(ft.Column):
         self.date_text = ft.Text("No date selected", size=16)
         self.reminder_text = ft.TextField(label="Reminder text", width=300)
         self.reminders_list = ft.Column()
-        self.reminders = load_reminders()
         self.remindersGetTasks = self.newDB.get_all_tasks()
         self.controls.append(self.date_text)
 
@@ -172,6 +168,13 @@ class TaskManager(ft.Column):
 
         e.control.bgcolor = "#0047ab"
         self.selected_reminder = e.control
+
+        if self.selected_reminder:
+            reminder_data = self.selected_reminder.content.controls[0].value.split(" at ")
+            if len(reminder_data) > 1:
+                self.reminder_text.value = reminder_data[0].replace("Reminder: ", "")
+                self.selected_date = reminder_data[1].split()[0]
+
         self.update()
 
     def add_reminder(self, e):
@@ -203,7 +206,38 @@ class TaskManager(ft.Column):
             print(f"No reminder selected")
 
     def update_reminder(self, e):
-        pass
+        if self.selected_reminder and self.reminder_text.value and self.selected_date:
+            try:
+                reminder_id = self.selected_reminder.data
+                new_description = self.reminder_text.value
+                new_date = self.selected_date
+                self.newDB.update_task((new_description, new_date, reminder_id))
+                self.selected_reminder.content.controls[0].value = f"Reminder: {new_description} at {new_date}"
+                self.reminder_text.value = ""
+                self.selected_reminder.bgcolor = None
+                self.selected_reminder = None
+                self.update()
+            except ValueError as ex:
+                print(f"Error updating reminder: {ex}")
+        else:
+            print("No reminder selected or missing fields!")
+
+    def update_reminder(self, e):
+        if self.selected_reminder and self.reminder_text.value and self.selected_date:
+            try:
+                reminder_id = self.selected_reminder.data
+                new_description = self.reminder_text.value
+                new_date = self.selected_date
+                self.newDB.update_task((new_description, new_date, reminder_id))
+                self.selected_reminder.content.controls[0].value = f"Reminder: {new_description} at {new_date}"
+                self.reminder_text.value = ""
+                self.selected_reminder.bgcolor = None
+                self.selected_reminder = None
+                self.update()
+            except ValueError as ex:
+                print(f"Error updating reminder: {ex}")
+        else:
+            print("No reminder selected or missing fields!")
 
     def load_existing_reminders(self):
         for id, description, date, status in self.remindersGetTasks:

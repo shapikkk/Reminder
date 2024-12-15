@@ -16,7 +16,6 @@ class Database:
     def get_all_tasks(self):
         Database.cursor.execute("SELECT * FROM reminderPy WHERE status between 0 and 1")
         select_data = Database.cursor.fetchall()
-
         return select_data
 
     def save_task(self, data):
@@ -24,7 +23,7 @@ class Database:
         self.conn.commit()
 
     def update_task(self, data):
-        Database.cursor.execute("UPDATE reminderPy SET description = ? WHERE id = ?", data)
+        Database.cursor.execute("UPDATE reminderPy SET description = ?, date = ? WHERE id = ?", data)
         self.conn.commit()
 
     def delete_task(self, data):
