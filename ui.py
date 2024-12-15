@@ -222,23 +222,6 @@ class TaskManager(ft.Column):
         else:
             print("No reminder selected or missing fields!")
 
-    def update_reminder(self, e):
-        if self.selected_reminder and self.reminder_text.value and self.selected_date:
-            try:
-                reminder_id = self.selected_reminder.data
-                new_description = self.reminder_text.value
-                new_date = self.selected_date
-                self.newDB.update_task((new_description, new_date, reminder_id))
-                self.selected_reminder.content.controls[0].value = f"Reminder: {new_description} at {new_date}"
-                self.reminder_text.value = ""
-                self.selected_reminder.bgcolor = None
-                self.selected_reminder = None
-                self.update()
-            except ValueError as ex:
-                print(f"Error updating reminder: {ex}")
-        else:
-            print("No reminder selected or missing fields!")
-
     def load_existing_reminders(self):
         for id, description, date, status in self.remindersGetTasks:
             reminder_status = f"({status})" if status else ""
