@@ -223,6 +223,9 @@ class TaskManager(ft.Column):
             print("No reminder selected or missing fields!")
 
     def load_existing_reminders(self):
+
+        reminder_updater()
+
         for id, description, date, status in self.remindersGetTasks:
             reminder_status = f"({status})" if status else ""
 

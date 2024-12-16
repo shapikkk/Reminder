@@ -26,6 +26,10 @@ class Database:
         Database.cursor.execute("UPDATE reminderPy SET description = ?, date = ? WHERE id = ?", data)
         self.conn.commit()
 
+    def update_task_status(self, task_id, new_status):
+        Database.cursor.execute("UPDATE reminderPy SET status = ? WHERE id = ?", (new_status, task_id))
+        Database.conn.commit()
+
     def delete_task(self, data):
         Database.cursor.execute("DELETE FROM reminderPy WHERE id = ?", data)
         self.conn.commit()

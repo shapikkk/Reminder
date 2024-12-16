@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from plyer import notification
+from database import *
 
 REMINDERS_FILE = "./reminders.json"
 
@@ -28,12 +29,18 @@ def show_notify(title, message):
         timeout=5
     )
 
-def reminder_updater(reminders):
-    time_now = datetime.now()
-    for index, (text, date, status) in enumerate(reminders):
-        status = "past" if date < time_now else "active"
-        reminders[index] = (text, date, status)
+def reminder_updater():
+    db = Database()
 
-        checkDateNotify = date - time_now
-        if status == "active" and 0 <= checkDateNotify.days < 1:
-            show_notify("Reminder for tomorrow!", f"Don't forget: {text}")
+    reminders = db.get_all_tasks()
+
+    time_now = datetime.now()
+
+    for reminder_id, description, date, status in reminders:
+        new_status = 1 if date < time_now.date() else 0
+        if int(status) != new_status:
+            db.update_task_status(reminder_id, int(new_status))
+
+        time_difference = (date - time_now.date()).days * 24 * 3600
+        if new_status == 0 and 0 <= time_difference <= 86400:
+            show_notify("Reminder for tomorrow!", f"Don't forget: {description}")
