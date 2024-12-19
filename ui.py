@@ -128,10 +128,21 @@ class TaskManager(ft.Column):
         super().__init__()
         self.selected_date = None
         self.date_text = ft.Text("No date selected", size=16)
-        self.reminder_text = ft.TextField(label="Reminder text", width=300)
-        self.reminders_list = ft.Column()
+        self.reminder_text = ft.TextField(label="Reminder text")
+        self.reminders_list = ft.Column(width=1400)
         self.remindersGetTasks = self.newDB.get_all_tasks()
         self.controls.append(self.date_text)
+
+        self.controls.append( ft.Row(
+                controls=[
+                    ft.ElevatedButton("Add Reminder", on_click=self.add_reminder),
+                    ft.ElevatedButton("Delete Reminder", on_click=self.delete_reminder),
+                    ft.ElevatedButton("Update Reminder", on_click=self.update_reminder),
+                ],
+            alignment="center",
+            wrap=True
+            )
+        )
 
         self.controls.append(
             ft.GridView(
@@ -140,18 +151,10 @@ class TaskManager(ft.Column):
                         controls=[
                             self.reminder_text,
                             self.reminders_list,
-                        ]
-                    ),
-                    ft.Column(
-                        controls=[
-                            ft.ElevatedButton("Add Reminder", on_click=self.add_reminder),
-                            ft.ElevatedButton("Delete Reminder", on_click=self.delete_reminder),
-                            ft.ElevatedButton("Update Reminder", on_click=self.update_reminder),
-                        ]
+                        ],
+                        width=1400,
                     )
-                ],
-                max_extent=300,
-                run_spacing=50
+                ]
             )
         )
 
@@ -233,7 +236,7 @@ class TaskManager(ft.Column):
                 controls=[
                     ft.Text(f"Reminder: {description} at {date.isoformat()} {reminder_status}"),
                 ],
-                width=300
+                width=1400
             )
 
             reminder_container_event = ft.Container(
